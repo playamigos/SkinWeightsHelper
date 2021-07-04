@@ -1,0 +1,49 @@
+$paths = `fileDialog2 -fm 0 -ds 2 -okc "Save Weights" -fileFilter "Maya Skin Weights (*.skin)"`;
+string $filePath = $paths[0];
+$dir = dirname($paths[0]);
+sysFile -md $dir;
+
+$sel = `ls -sl -fl`;
+string $meshName = $sel[0];
+string $skinClusterName = `findRelatedSkinCluster $meshName`;
+skinCluster -e -nw 2 $skinClusterName;// convert to post skinning
+select -r $meshName;
+int $counts[] = `polyEvaluate -v`;//Get number of vertices
+int $numVerts = $counts[0];
+
+global string $gMainProgressBar;
+progressBar  -edit -beginProgress -isInterruptable false -status "Exporting ..." -maxValue $numVerts $gMainProgressBar;
+
+string $influences[] = `skinCluster -q -inf`;//Get all Joint influences on a mesh
+string $skinData = "";
+string $tmpData = "";
+string $inf;
+for($inf in $influences)
+{
+    $tmpData += $inf + ",";
+}
+$skinData += $tmpData + "\n";
+
+int $vertId = 0;
+for($vertId = 0; $vertId < $numVerts; $vertId++)
+{
+    float $weights[] = `skinPercent -q -v $skinClusterName ($meshName +".vtx["+$vertId+"]")`; 
+    $tmpData = "";
+    float $weight;
+    for($weight in $weights)
+    {
+        $tmpData += (string)$weight + ",";
+    }
+    $skinData += $tmpData + "\n";   
+    //update the progress bar
+    progressBar -edit -step 1 $gMainProgressBar;  
+}
+
+int $fileId = `fopen $filePath "w"` ;
+fprint $fileId $skinData ;
+fclose $fileId ;
+
+print "SkinWeights Exported";
+
+//kill the progress bar
+progressBar -edit -endProgress $gMainProgressBar;

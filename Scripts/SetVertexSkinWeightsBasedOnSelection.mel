@@ -1,0 +1,37 @@
+$jnts = `ls -sl -fl -typ "joint"`;
+$verts = `ls -sl -fl -typ "float3"`;
+
+string $buffer[];
+clear $buffer;
+$numOfInfs = `tokenize $verts[0] "." $buffer`;
+
+
+string $meshName = $buffer[0];
+string $skinClusterName = `findRelatedSkinCluster $meshName`;
+skinCluster -e -nw 2 $skinClusterName;// convert to post skinning
+
+
+
+for($vert in $verts)
+{  
+    string $tmp = "";
+    select -r $meshName;
+    string $influences[] = `skinCluster -q -inf`;//Get all Joint influences on a mesh
+    for($influence in $influences)
+    {
+        $tmp += " -tv "+$influence+" 0";
+    }
+    string $cmnd = "skinPercent"+$tmp+" "+$skinClusterName+" "+$vert;
+    eval ($cmnd); 
+    $tmp = "";
+    for($jnt in $jnts)
+    {
+        $tmp += " -tv "+$jnt+" 1";
+    }
+    string $cmnd = "skinPercent"+$tmp+" "+$skinClusterName+" "+$vert;
+    eval ($cmnd);  
+}
+
+doMenuComponentSelectionExt($meshName, "vertex", 0);
+
+print "Vertex weights modified";

@@ -1,0 +1,55 @@
+global string $gShelfTopLevel;
+string $currentShelf = `tabLayout -query -selectTab $gShelfTopLevel`;
+setParent $currentShelf;
+string $asInstallScriptLocation=`asInstallScriptLocation`;
+if (`gmatch $asInstallScriptLocation "*\*"`)
+	$asInstallScriptLocation=`substituteAllString $asInstallScriptLocation "\\" "/"`;
+	
+string $iconExt="png";
+
+shelfButton
+	-command ("source \""+$asInstallScriptLocation+"Scripts/ExportSkinWeight.mel\";")
+	-annotation "ExportSkinWeight"
+	-label "ExportSkinWeight"
+	-image ($asInstallScriptLocation+"Icons/Export."+$iconExt)
+	-image1 ($asInstallScriptLocation+"Icons/Export."+$iconExt)
+	-sourceType "mel"
+;
+
+shelfButton
+	-command ("source \""+$asInstallScriptLocation+"Scripts/ImportSkinWeight.mel\";")
+	-annotation "ImportSkinWeight"
+	-label "ImportSkinWeight"
+	-image ($asInstallScriptLocation+"Icons/Import."+$iconExt)
+	-image1 ($asInstallScriptLocation+"Icons/Import."+$iconExt)
+	-sourceType "mel"
+;
+
+shelfButton
+	-command ("source \""+$asInstallScriptLocation+"Scripts/SetVertexSkinWeightsBasedOnSelection.mel\";")
+	-annotation "SetVertexSkinWeightsBasedOnSelection"
+	-label "SetVertexSkinWeightsBasedOnSelection"
+	-image ($asInstallScriptLocation+"Icons/vertexWeight."+$iconExt)
+	-image1 ($asInstallScriptLocation+"Icons/vertexWeight."+$iconExt)
+	-sourceType "mel"
+;
+
+//--installTemplate resume--//
+print ("\n// "+"vGear"+" has been added to current shelf.\n");
+
+global proc asInstallScriptLocator (){}
+
+global proc string asInstallScriptLocation ()
+{
+string $whatIs=`whatIs asInstallScriptLocator`;
+string $fullPath=`substring $whatIs 25 999`;
+string $buffer[];
+string $slash="/";
+if (`gmatch $whatIs "*\\\\*"`)//sourced from ScriptEditor
+	$slash="\\";
+int $numTok=`tokenize $fullPath $slash $buffer`;
+int $numLetters=size($fullPath);
+int $numLettersLastFolder=size($buffer[$numTok-1]);
+string $scriptLocation=`substring $fullPath 1 ($numLetters-$numLettersLastFolder)`;
+return $scriptLocation;
+}

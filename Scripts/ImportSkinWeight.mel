@@ -1,0 +1,48 @@
+$paths = `fileDialog2 -fm 1 -ds 2 -okc "Open Weights" -fileFilter "Maya Skin Weights (*.skin)"`;
+string $filePath = $paths[0];
+
+string $nextLine;
+
+int $fileId = `fopen $filePath "r"` ;
+$nextLine = `fgetline $fileId` ;
+
+$sel = `ls -sl -fl`;
+string $meshName = $sel[0];
+string $skinClusterName = `findRelatedSkinCluster $meshName`;
+skinCluster -e -nw 2 $skinClusterName;// convert to post skinning
+select -r $meshName;
+int $counts[] = `polyEvaluate -v`;//Get number of vertices
+int $numVerts = $counts[0];
+
+global string $gMainProgressBar;
+progressBar -edit -beginProgress -isInterruptable false -status "Importing ..." -maxValue $numVerts $gMainProgressBar;
+
+string $influences[];
+clear $influences;
+$numOfInfs = `tokenize $nextLine "," $influences`;
+
+
+int $vertId = 0;
+for($vertId = 0; $vertId < $numVerts; $vertId++)
+{    
+    $nextLine = `fgetline $fileId` ;
+    string $weights[];
+    clear $weights;
+    $numOfWeights = `tokenize $nextLine "," $weights`;
+    string $tmp = "";
+    int $infId = 0;
+    for($infId = 0; $infId < $numOfInfs-1; $infId++)
+    {
+        $tmp += " -tv "+$influences[$infId]+" "+$weights[$infId];
+    }
+    string $cmnd = "skinPercent"+$tmp+" "+$skinClusterName+" "+$meshName + ".vtx[" + $vertId + "]";
+    eval ($cmnd);  
+    progressBar -edit -step 1 $gMainProgressBar; 
+}
+
+fclose $fileId ;
+
+print "SkinWeights Imported";
+
+//kill the progress bar
+progressBar -edit -endProgress $gMainProgressBar;
